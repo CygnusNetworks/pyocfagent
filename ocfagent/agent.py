@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
-import itertools
+import inspect
 import os
 import sys
 
@@ -92,6 +92,9 @@ class ResourceAgent(object):
 				print "Found handler",handler
 				handler_dict={}
 				handler_dict["name"] = handler
+				func = getattr(self, "handle_%s" % handler)
+				print "argcount",func.func_code.co_argcount,func.func_code.co_varnames,func.func_defaults
+				print inspect.getargspec(func)
 				handler_dict["timeout"] = 10
 				valid_handlers.append(handler_dict)
 		return valid_handlers
