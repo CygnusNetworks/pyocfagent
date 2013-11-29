@@ -40,7 +40,34 @@ class OCFErrUnimplemented(ResourceAgentException):
 		ResourceAgentException.__init__(self,OCF_ERR_UNIMPLEMENTED,message)
 
 
+class AttributeVerifier(type):
+	"""This metaclass carries out two checks.
+
+	At class construction time it verifies that an attribute
+	"ATTRIBUTES_MANDATORY" is present.
+
+	At object construction time it verifies that all elements of the
+	"ATTRIBUTES_MANDATORY" attribute are available.
+	"""
+
+	def __new__(cls, name, parents, attributes):
+		"""Class constructor."""
+		newcls = type.__new__(cls, name, parents, attributes)
+		if not hasattr(newcls, "ATTRIBUTES_MANDATORY"):
+			raise RuntimeError("instances of AttributeVerifier must have an ATTRIBUTES_MANDATORY attribute")
+		return newcls
+
+	def __call__(cls, *args, **kwargs):
+		"""Object constructor."""
+		obj = type.__call__(cls, *args, **kwargs)
+		for attr in cls.ATTRIBUTES_MANDATORY:
+			if not hasattr(cls, attr):
+				raise RuntimeError("attribute %r required on class %r" % (attr, name))
+		return cls
+
+
 class ResourceAgent(object):
+	__metaclass__ = AttributeVerifier
 	PARAMS=None
 	VERSION="0.11"
 	__OCF_ENV_MANDATORY=["OCF_ROOT","OCF_RA_VERSION_MAJOR","OCF_RA_VERSION_MINOR","OCF_RESOURCE_PROVIDER","OCF_RESOURCE_INSTANCE","OCF_RESOURCE_TYPE"]
@@ -49,7 +76,7 @@ class ResourceAgent(object):
 	__OCF_HANDLERS_MANDATORY=["start","stop","monitor"]
 	__OCF_HANDLERS_OPTIONAL=["promote","demote","migrate_to","migrate_from","notify","recover","reload"]
 	__OCF_VALID_HANDLERS=__OCF_HANDLERS_MANDATORY+__OCF_HANDLERS_OPTIONAL
-	__ATTRIBUTES_MANDATORY=["version","longdesc","shortdesc"]
+	ATTRIBUTES_MANDATORY=["version","longdesc","shortdesc"]
 
 	def __init__(self,unit_test=False):
 		self.OCF_ENVIRON = {}
@@ -61,10 +88,6 @@ class ResourceAgent(object):
 		self.res_provider=None
 
 		self.name=self.__class__.__name__
-
-		for attr in self.__ATTRIBUTES_MANDATORY:
-			if not hasattr(self,attr):
-				raise RuntimeError("OCF Agent must have class function %s defined" % attr)
 
 		for attr in self.__OCF_HANDLERS_MANDATORY:
 			if not hasattr(self,"handle_%s" % attr):
