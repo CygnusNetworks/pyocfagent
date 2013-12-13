@@ -9,7 +9,7 @@ setup(name="ocfagent",
 	author = __author__,
 	author_email = __email__,
 	packages = ["ocfagent"],
-	license = __license__
+	license = __license__,
 	classifiers = [
 		"License :: OSI Approved :: GNU General Public License v2 (GPLv2)",
 		"Programming Language :: Python",

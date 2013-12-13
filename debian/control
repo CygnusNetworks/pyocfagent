@@ -1,0 +1,14 @@
+Source: ocfagent
+Maintainer: Dr. Torge Szczepanek <info@cygnusnetworks.de>
+Section: python
+Priority: optional
+Build-Depends: python-all (>= 2.6.6-3), debhelper (>= 9)
+Standards-Version: 3.9.5
+
+Package: python-ocfagent
+Architecture: all
+Depends: ${misc:Depends}, ${python:Depends}
+Description: OCF Python wrapper for ocf resource agents
+ OCF (Open Cluster Framework) aka Pacemaker/Corosync
+ Python wrapper for writing ocf resource agents
+
