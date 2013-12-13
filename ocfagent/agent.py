@@ -22,7 +22,7 @@ OCF_FAILED_MASTER=9
 class ResourceAgentException(SystemExit):
 	def __init__(self,error_code,message):
 		self.error_code=error_code
-		print "ResourceAgentException:",message
+		print "ResourceAgentException:",message,"- exit code",error_code
 		SystemExit.__init__(self,error_code)
 	def __str__(self):
 		return repr(self.error_code)
@@ -76,7 +76,7 @@ class AttributeVerifier(type):
 
 class ResourceAgent(object):
 	__metaclass__ = AttributeVerifier
-	__OCF_ENV_MANDATORY=["OCF_ROOT","OCF_RA_VERSION_MAJOR","OCF_RA_VERSION_MINOR","OCF_RESOURCE_PROVIDER","OCF_RESOURCE_INSTANCE","OCF_RESOURCE_TYPE"]
+	__OCF_ENV_MANDATORY=["OCF_ROOT","OCF_RA_VERSION_MAJOR","OCF_RA_VERSION_MINOR","OCF_RESOURCE_INSTANCE","OCF_RESOURCE_TYPE"]
 	# Valid OCF Handlers exlucding meta-data and validate-all (implemented in ResourceAgent)
 
 	__OCF_HANDLERS_MANDATORY=["start","stop","monitor"]
@@ -84,7 +84,7 @@ class ResourceAgent(object):
 	__OCF_VALID_HANDLERS=__OCF_HANDLERS_MANDATORY+__OCF_HANDLERS_OPTIONAL
 	ATTRIBUTES_MANDATORY=["VERSION","LONGDESC","SHORTDESC"]
 
-	def __init__(self,unit_test=False):
+	def __init__(self,testmode=False):
 		self.OCF_ENVIRON = {}
 		self.HA_ENVIRON = {}
 		self.res_type=None
@@ -99,26 +99,48 @@ class ResourceAgent(object):
 			if not hasattr(self,"handle_%s" % attr):
 				raise OCFErrUnimplemented("Mandatory handler %s is not implemented" % attr)
 		
-		self.unit_test = unit_test
+		self.testmode = testmode
 		
 		self.handlers=self.get_implemented_handlers()
 		self.parameter_spec=self.get_parameter_spec()
+		self.action = None
 
-		if len(sys.argv)<=1:
+		if not len(sys.argv)<=1:
+			self.parse_environment()
+
+	def get_action(self):
+		if not len(sys.argv)>1:
+			self.usage()
+			raise OCFErrUnimplemented("No action specified")
+		action = sys.argv[1]
+		if not action in self.handlers.keys()+["meta-data","usage"]:
+			raise RuntimeError("Specified action %s is not a defined handler" % action)
+		return action
+
+	def cmdline_call(self):
+		action = self.get_action()
+		if action == "meta-data":
+			self.meta_data()
+		elif action == "usage":
 			self.usage()
 		else:
-			self.parse_environment()
-	
+			self.action = action
+			handler = getattr(self, "handle_%s" % action)
+			handler()
+		#FIXME: if monitor check for OCF_CHECK_LEVEL
+
+
 	def usage(self):
-		calls=[handler["name"] for handler in self.handlers]+["usage","meta-data"]
+		calls=self.handlers.keys()+["usage","meta-data"]
 		print "usage: %s {%s}" % (self.name, "|".join(calls))
-	
+
+
 	def get_implemented_handlers(self):
-		valid_handlers=[]
+		valid_handlers={}
 		for handler in self.__OCF_VALID_HANDLERS:
 			if hasattr(self,"handle_%s" % handler):
 				handler_dict={}
-				handler_dict["name"] = handler
+				#handler_dict["name"] = handler
 				func = getattr(self, "handle_%s" % handler)
 				assert func.func_code.co_argcount>1
 				assert len(func.func_code.co_varnames)==func.func_code.co_argcount
@@ -135,7 +157,8 @@ class ResourceAgent(object):
 				#TODO: add handler parameter validaton?
 				if "timeout" not in handler_dict.keys():
 					raise RuntimeError("Handler %s does not have parameter timeout" % handler)
-				valid_handlers.append(handler_dict)
+				valid_handlers[handler] = handler_dict
+				#valid_handlers.append(handler_dict)
 		return valid_handlers
 
 	def get_parameter_spec(self):
@@ -162,24 +185,37 @@ class ResourceAgent(object):
 				params.append(param_instance)
 		return params
 
+	@property
+	def is_clone(self):
+		return self.res_clone
+
+	@property
+	def clone_id(self):
+		return self.res_clone_id
 
 	def parse_environment(self):
 		env = os.environ
-		
+		# on a meta-data or usage call return
+		if self.get_action() in ["meta-data","usage"]:
+			return
 		for key in env.keys():
 			if key.startswith("HA_"):
 				self.HA_ENVIRON[key]=env[key]
 			if key.startswith("OCF_"):
 				self.OCF_ENVIRON[key]=env[key]
-		
-		if not self.unit_test:
+
+		if not self.testmode:
 			for entry in self.__OCF_ENV_MANDATORY:
 				if entry not in self.OCF_ENVIRON.keys():
 					raise OCFErrArgs("Mandatory environment variable %s not found" % entry)
-		
-		#FIXME: Check RA Version Major and Minor. Check Resource provider?
-		#FIXME: get clone number
-		#FIXME: get ocf resource type
+
+
+			ocf_ra_version="%i.%i" % int(self.OCF_ENVIRON["OCF_RA_VERSION_MAJOR"]),int(self.OCF_ENVIRON["OCF_RA_VERSION_MINOR"])
+			assert ocf_ra_version == "1.0"
+		else:
+			ocf_ra_version = "1.0"
+
+		if self.OCF_ENVIRON.has_key("OCF_RESOURCE_INSTANCE"):
 			pos=self.OCF_ENVIRON["OCF_RESOURCE_INSTANCE"].find(":")
 			if pos>=0:
 				self.res_instance=self.OCF_ENVIRON["OCF_RESOURCE_INSTANCE"][:pos]
@@ -187,9 +223,12 @@ class ResourceAgent(object):
 				self.res_clone_id=int(self.OCF_ENVIRON["OCF_RESOURCE_INSTANCE"][pos+1:])
 			else:
 				self.res_instance=self.OCF_ENVIRON["OCF_RESOURCE_INSTANCE"]
+
+		if self.OCF_ENVIRON.has_key("OCF_RESOURCE_TYPE"):
 			self.res_type=self.OCF_ENVIRON["OCF_RESOURCE_TYPE"]
+		if self.OCF_ENVIRON.has_key("OCF_RESOURCE_PROVIDER"):
 			self.res_provider=self.OCF_ENVIRON["OCF_RESOURCE_PROVIDER"]
-			
+
 
 	def meta_data_xml(self):
 		eResourceAgent = etree.Element("resource-agent", {"name": self.name, "version": self.VERSION})
@@ -198,16 +237,7 @@ class ResourceAgent(object):
 		etree.SubElement(eResourceAgent, "shortdesc", {"lang": "en"}).text = self.SHORTDESC
 		eParameters = etree.SubElement(eResourceAgent, "parameters")
 		for p in self.parameter_spec:
-			if p.required:
-				required = 1
-			else:
-				required = 0
-			if p.unique:
-				unique = 1
-			else:
-				unique = 0
-
-			eParameter=etree.Element("parameter", { "name": p.name, "unique": str(unique), "required": str(required) })
+			eParameter=etree.Element("parameter", { "name": p.name, "unique": str(int(p.unique)), "required": str(int(p.required)) })
 			etree.SubElement(eParameter, "longdesc", { "lang": "en" }).text = p.longdesc
 			etree.SubElement(eParameter, "shortdesc", { "lang": "en" }).text = p.shortdesc
 			if p.default is not None:
@@ -218,12 +248,14 @@ class ResourceAgent(object):
 			eParameters.append(eParameter)
 
 		eActions = etree.SubElement(eResourceAgent, "actions")
-		for handler in self.handlers:
-			p = {}
-			for key in handler.keys():
-				p[key] = str(handler[key])
+		for handler in self.handlers.keys():
 
-			eActions.append(etree.Element("action", p))
+			h = {}
+			h["name"] = handler
+			for key in self.handlers[handler]:
+				h[key] = str(self.handlers[handler][key])
+
+			eActions.append(etree.Element("action", h))
 
 		return eResourceAgent
 
