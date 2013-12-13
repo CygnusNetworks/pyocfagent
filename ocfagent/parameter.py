@@ -8,7 +8,7 @@ class ResourceBaseParameter(object):
 	__CLASS_NAME_PREFIX = "OCFParameter_"
 
 	def __init__(self):
-		self._value = None
+		self._value = self.type_def = None
 		if not self.__class__.__name__.startswith(self.__CLASS_NAME_PREFIX):
 			raise RuntimeError("ResourceParameter class name does not start with %s" % self.__CLASS_NAME_PREFIX)
 
@@ -32,11 +32,12 @@ class ResourceBaseParameter(object):
 		return self.__class__.__name__[len(self.__CLASS_NAME_PREFIX):]
 
 	@property
+	@classmethod
 	def type_def(self):
-		return None
+		return types.NoneType
 
 	@property
-	def type_name(self):
+	def type_name(self): #pylint: disable=R0201
 		if self.type_def == types.IntType:
 			return "integer"
 		if self.type_def == types.StringType:
@@ -44,17 +45,16 @@ class ResourceBaseParameter(object):
 		if self.type_def == types.BooleanType:
 			return "boolean"
 
-
 	@property
-	def default(self):
+	def default(self): #pylint: disable=R0201
 		return None
 
 	@property
-	def unique(self):
+	def unique(self): #pylint: disable=R0201
 		return True
 
 	@property
-	def required(self):
+	def required(self): #pylint: disable=R0201
 		return False
 
 	@property
@@ -99,7 +99,8 @@ class ResourceBoolParameter(ResourceBaseParameter):
 	def type_def(self):
 		return types.BooleanType
 
-	def value(self, value):
+	@value.setter
+	def value(self, value): #pylint: disable=R0201,W0221
 		if value in self._true:
 			self._value = True
 			return

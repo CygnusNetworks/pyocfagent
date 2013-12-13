@@ -23,17 +23,20 @@ This is a OCF Ressource fake parameter"""
 			"""defines the default value for there Resource parameter"""
 			return "bla"
 
+	@classmethod
 	def handle_start(self,timeout=10):
 		"""Mandatory Start handler to be implemented"""
-		print "handle_start called"
+		print "handle_start called with timeout",timeout
 
+	@classmethod
 	def handle_stop(self,timeout=10):
 		"""Mandatory Stop handler to be implemented"""
-		print "handle stop called"
+		print "handle stop called",timeout
 
+	@classmethod
 	def handle_monitor(self,timeout=10):
 		"""Mandatory monitor handler to be implemented"""
-		print "handle monitor called"
+		print "handle monitor called",timeout
 
 	#optional additional handlers
 #	def handle_reload(self,timeout = 10):

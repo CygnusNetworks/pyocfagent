@@ -55,18 +55,18 @@ class AttributeVerifier(type):
 	"""
 	instance = None
 
-	def __new__(cls, name, parents, attributes):
+	def __new__(mcs, name, parents, attributes):
 		"""Class constructor."""
-		newcls = type.__new__(cls, name, parents, attributes)
+		newcls = type.__new__(mcs, name, parents, attributes)
 		if not hasattr(newcls, "ATTRIBUTES_MANDATORY"):
 			raise RuntimeError("instances of AttributeVerifier must have an ATTRIBUTES_MANDATORY attribute")
-		cls.name = name
+		mcs.name = name
 		return newcls
 
 	def __call__(cls, *args, **kwargs):
 		"""Object constructor."""
 
-		obj = type.__call__(cls, *args, **kwargs)
+		#obj = type.__call__(cls, *args, **kwargs)
 		for attr in cls.ATTRIBUTES_MANDATORY:
 			if not hasattr(cls, attr):
 				raise RuntimeError("attribute %r required on class %r" % (attr, cls.name))
@@ -155,7 +155,6 @@ class ResourceAgent(object):
 				for var in func.func_code.co_varnames:
 					if var == "self":
 						continue
-					func.func_defaults[i]
 					handler_dict[var] = func.func_defaults[i]
 					i += 1
 				#TODO: add handler parameter validaton?
@@ -235,10 +234,10 @@ class ResourceAgent(object):
 
 
 	def meta_data_xml(self):
-		eResourceAgent = etree.Element("resource-agent", {"name": self.name, "version": self.VERSION})
+		eResourceAgent = etree.Element("resource-agent", {"name": self.name, "version": self.VERSION}) #pylint: disable=E1101
 		etree.SubElement(eResourceAgent, "version").text = "1.0"
-		etree.SubElement(eResourceAgent, "longdesc", {"lang": "en"}).text = self.LONGDESC
-		etree.SubElement(eResourceAgent, "shortdesc", {"lang": "en"}).text = self.SHORTDESC
+		etree.SubElement(eResourceAgent, "longdesc", {"lang": "en"}).text = self.LONGDESC  #pylint: disable=E1101
+		etree.SubElement(eResourceAgent, "shortdesc", {"lang": "en"}).text = self.SHORTDESC  #pylint: disable=E1101
 		eParameters = etree.SubElement(eResourceAgent, "parameters")
 		for p in self.parameter_spec:
 			eParameter = etree.Element("parameter",
