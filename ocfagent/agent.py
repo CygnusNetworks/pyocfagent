@@ -18,6 +18,8 @@ OCF_NOT_RUNNING = 7
 OCF_RUNNING_MASTER = 8
 OCF_FAILED_MASTER = 9
 
+OCF_RESKEY_PREFIX = "OCF_RESKEY_"
+
 
 class ResourceAgentException(SystemExit):
 	def __init__(self, error_code, message):
@@ -31,11 +33,15 @@ class ResourceAgentException(SystemExit):
 
 class OCFSuccess(ResourceAgentException):
 	"""No error, action succeeded completely.
-	The action completed successfully. This is the expected return code for any successful start, stop, promote, demote, migrate_from, migrate_to, meta_data, help, and usage action.
-For monitor (and its deprecated alias, status), however, a modified convention applies:
+	The action completed successfully. This is the expected return code for any successful start, stop, promote,
+	demote, migrate_from, migrate_to, meta_data, help, and usage action.
+	For monitor (and its deprecated alias, status), however, a modified convention applies:
 
-For primitive (stateless) resources, OCF_SUCCESS from monitor means that the resource is running. Non-running and gracefully shut-down resources must instead return OCF_NOT_RUNNING.
-For master/slave (stateful) resources, OCF_SUCCESS from monitor means that the resource is running in Slave mode. Resources running in Master mode must instead return OCF_RUNNING_MASTER, and gracefully shut-down resources must instead return OCF_NOT_RUNNING.
+	For primitive (stateless) resources, OCF_SUCCESS from monitor means that the resource is running.
+	Non-running and gracefully shut-down resources must instead return OCF_NOT_RUNNING.
+	For master/slave (stateful) resources, OCF_SUCCESS from monitor means that the resource is running in
+	Slave mode. Resources running in Master mode must instead return OCF_RUNNING_MASTER, and gracefully shut-down
+	resources must instead return OCF_NOT_RUNNING.
 	"""
 	def __init__(self, message):
 		ResourceAgentException.__init__(self, OCF_SUCCESS, message)
@@ -44,8 +50,11 @@ class OCFErrGeneric(ResourceAgentException):
 	"""generic or unspecified error (current practice)
 	The "monitor" operation shall return this for a crashed, hung or
 	otherwise non-functional resource.
-	The action returned a generic error. A resource agent should use this exit code only when none of the more specific error codes, defined below, accurately describes the problem.
-	The cluster resource manager interprets this exit code as a soft error. This means that unless specifically configured otherwise, the resource manager will attempt to recover a resource which failed with OCF_ERR_GENERIC in-place — usually by restarting the resource on the same node.
+	The action returned a generic error. A resource agent should use this exit code only when none of the more
+	specific error codes, defined below, accurately describes the problem. The cluster resource manager interprets
+	this exit code as a soft error. This means that unless specifically configured otherwise, the resource manager
+	will attempt to recover a resource which failed with OCF_ERR_GENERIC in-place — usually by restarting the
+	resource on the same node.
 	"""
 	def __init__(self, message):
 		ResourceAgentException.__init__(self, OCF_ERR_GENERIC, message)
@@ -167,7 +176,6 @@ class AttributeVerifier(type):
 		for attr in cls.ATTRIBUTES_MANDATORY:
 			if not hasattr(cls, attr):
 				raise RuntimeError("attribute %r required on class %r" % (attr, cls.name))
-
 		if cls.instance is None:
 			cls.instance = super(AttributeVerifier, cls).__call__(*args, **kwargs)
 
@@ -208,6 +216,7 @@ class ResourceAgent(object):
 
 		if not len(sys.argv) <= 1:
 			self.parse_environment()
+			self.parse_parameters()
 
 	def get_action(self):
 		if not len(sys.argv) > 1:
@@ -241,24 +250,18 @@ class ResourceAgent(object):
 		for handler in self.__OCF_VALID_HANDLERS:
 			if hasattr(self, "handle_%s" % handler):
 				handler_dict = {}
-				#handler_dict["name"] = handler
 				func = getattr(self, "handle_%s" % handler)
 				assert func.func_code.co_argcount > 1
-				assert len(func.func_code.co_varnames) == func.func_code.co_argcount
 				assert func.func_code.co_varnames[0] == "self"
-				#TODO: each parameter is required to have a default. Is this good?
-				assert len(func.func_code.co_varnames) - 1 == len(func.func_defaults)
 				i = 0
-				for var in func.func_code.co_varnames:
+				for var in func.func_code.co_varnames[:func.func_code.co_argcount]:
 					if var == "self":
 						continue
 					handler_dict[var] = func.func_defaults[i]
 					i += 1
-				#TODO: add handler parameter validaton?
 				if "timeout" not in handler_dict.keys():
 					raise RuntimeError("Handler %s does not have parameter timeout" % handler)
 				valid_handlers[handler] = handler_dict
-			#valid_handlers.append(handler_dict)
 		return valid_handlers
 
 	def get_parameter_spec(self):
@@ -309,8 +312,8 @@ class ResourceAgent(object):
 				if entry not in self.OCF_ENVIRON.keys():
 					raise OCFErrArgs("Mandatory environment variable %s not found" % entry)
 
-			ocf_ra_version = "%i.%i" % int(self.OCF_ENVIRON["OCF_RA_VERSION_MAJOR"]), int(
-				self.OCF_ENVIRON["OCF_RA_VERSION_MINOR"])
+			ocf_ra_version = "%i.%i" % (int(self.OCF_ENVIRON["OCF_RA_VERSION_MAJOR"]),
+										int(self.OCF_ENVIRON["OCF_RA_VERSION_MINOR"]))
 			assert ocf_ra_version == "1.0"
 		else:
 			ocf_ra_version = "1.0"
@@ -328,6 +331,28 @@ class ResourceAgent(object):
 			self.res_type = self.OCF_ENVIRON["OCF_RESOURCE_TYPE"]
 		if self.OCF_ENVIRON.has_key("OCF_RESOURCE_PROVIDER"):
 			self.res_provider = self.OCF_ENVIRON["OCF_RESOURCE_PROVIDER"]
+
+	def parse_parameters(self):
+		if self.testmode == False:
+			assert len(self.OCF_ENVIRON)>0
+		for param_cls in self.parameter_spec:
+			cls_name = param_cls.name
+			env_name = "%s%s" % (OCF_RESKEY_PREFIX, cls_name)
+			if param_cls.type_def == types.IntType:
+				param_cls.value = int(self.OCF_ENVIRON[env_name])
+			elif param_cls.type_def == types.StringType:
+				param_cls.value = str(self.OCF_ENVIRON[env_name])
+			elif param_cls.type_def == types.BooleanType:
+				param_cls.value = self.OCF_ENVIRON[env_name]
+
+	def get_parameter(self,name):
+		found_cls = None
+		for param_cls in self.parameter_spec:
+			if name == param_cls.name:
+				found_cls = param_cls
+
+		assert found_cls != None
+		return found_cls.value
 
 
 	def meta_data_xml(self):
