@@ -5,39 +5,43 @@ import os
 import sys
 import types
 
-#from xml.etree import ElementTree
 from lxml import etree
 
-OCF_SUCCESS=0
-OCF_ERR_GENERIC=1
-OCF_ERR_ARGS=2
-OCF_ERR_UNIMPLEMENTED=3
-OCF_ERR_PERM=4
-OCF_ERR_INSTALLED=5
-OCF_ERR_CONFIGURED=6
-OCF_ERR_NOT_RUNNING=7
-OCF_ERR_RUNNING_MASTER=8
-OCF_FAILED_MASTER=9
+OCF_SUCCESS = 0
+OCF_ERR_GENERIC = 1
+OCF_ERR_ARGS = 2
+OCF_ERR_UNIMPLEMENTED = 3
+OCF_ERR_PERM = 4
+OCF_ERR_INSTALLED = 5
+OCF_ERR_CONFIGURED = 6
+OCF_ERR_NOT_RUNNING = 7
+OCF_ERR_RUNNING_MASTER = 8
+OCF_FAILED_MASTER = 9
+
 
 class ResourceAgentException(SystemExit):
-	def __init__(self,error_code,message):
-		self.error_code=error_code
-		print "ResourceAgentException:",message,"- exit code",error_code
-		SystemExit.__init__(self,error_code)
+	def __init__(self, error_code, message):
+		self.error_code = error_code
+		print "ResourceAgentException:", message, "- exit code", error_code
+		SystemExit.__init__(self, error_code)
+
 	def __str__(self):
 		return repr(self.error_code)
 
+
 class OCFSuccess(ResourceAgentException):
-	def __init__(self,message):
-		ResourceAgentException.__init__(self,OCF_SUCCESS,message)
+	def __init__(self, message):
+		ResourceAgentException.__init__(self, OCF_SUCCESS, message)
+
 
 class OCFErrArgs(ResourceAgentException):
-	def __init__(self,message):
-		ResourceAgentException.__init__(self,OCF_ERR_ARGS,message)
-		
+	def __init__(self, message):
+		ResourceAgentException.__init__(self, OCF_ERR_ARGS, message)
+
+
 class OCFErrUnimplemented(ResourceAgentException):
-	def __init__(self,message):
-		ResourceAgentException.__init__(self,OCF_ERR_UNIMPLEMENTED,message)
+	def __init__(self, message):
+		ResourceAgentException.__init__(self, OCF_ERR_UNIMPLEMENTED, message)
 
 
 class AttributeVerifier(type):
@@ -56,7 +60,7 @@ class AttributeVerifier(type):
 		newcls = type.__new__(cls, name, parents, attributes)
 		if not hasattr(newcls, "ATTRIBUTES_MANDATORY"):
 			raise RuntimeError("instances of AttributeVerifier must have an ATTRIBUTES_MANDATORY attribute")
-		cls.name=name
+		cls.name = name
 		return newcls
 
 	def __call__(cls, *args, **kwargs):
@@ -67,7 +71,6 @@ class AttributeVerifier(type):
 			if not hasattr(cls, attr):
 				raise RuntimeError("attribute %r required on class %r" % (attr, cls.name))
 
-
 		if cls.instance is None:
 			cls.instance = super(AttributeVerifier, cls).__call__(*args, **kwargs)
 
@@ -76,44 +79,45 @@ class AttributeVerifier(type):
 
 class ResourceAgent(object):
 	__metaclass__ = AttributeVerifier
-	__OCF_ENV_MANDATORY=["OCF_ROOT","OCF_RA_VERSION_MAJOR","OCF_RA_VERSION_MINOR","OCF_RESOURCE_INSTANCE","OCF_RESOURCE_TYPE"]
+	__OCF_ENV_MANDATORY = ["OCF_ROOT", "OCF_RA_VERSION_MAJOR", "OCF_RA_VERSION_MINOR", "OCF_RESOURCE_INSTANCE",
+						   "OCF_RESOURCE_TYPE"]
 	# Valid OCF Handlers exlucding meta-data and validate-all (implemented in ResourceAgent)
 
-	__OCF_HANDLERS_MANDATORY=["start","stop","monitor"]
-	__OCF_HANDLERS_OPTIONAL=["promote","demote","migrate_to","migrate_from","notify","recover","reload"]
-	__OCF_VALID_HANDLERS=__OCF_HANDLERS_MANDATORY+__OCF_HANDLERS_OPTIONAL
-	ATTRIBUTES_MANDATORY=["VERSION","LONGDESC","SHORTDESC"]
+	__OCF_HANDLERS_MANDATORY = ["start", "stop", "monitor"]
+	__OCF_HANDLERS_OPTIONAL = ["promote", "demote", "migrate_to", "migrate_from", "notify", "recover", "reload"]
+	__OCF_VALID_HANDLERS = __OCF_HANDLERS_MANDATORY + __OCF_HANDLERS_OPTIONAL
+	ATTRIBUTES_MANDATORY = ["VERSION", "LONGDESC", "SHORTDESC"]
 
-	def __init__(self,testmode=False):
+	def __init__(self, testmode=False):
 		self.OCF_ENVIRON = {}
 		self.HA_ENVIRON = {}
-		self.res_type=None
-		self.res_instance=None
-		self.res_clone=False
-		self.res_clone_id=-1
-		self.res_provider=None
+		self.res_type = None
+		self.res_instance = None
+		self.res_clone = False
+		self.res_clone_id = -1
+		self.res_provider = None
 
-		self.name=self.__class__.__name__
+		self.name = self.__class__.__name__
 
 		for attr in self.__OCF_HANDLERS_MANDATORY:
-			if not hasattr(self,"handle_%s" % attr):
+			if not hasattr(self, "handle_%s" % attr):
 				raise OCFErrUnimplemented("Mandatory handler %s is not implemented" % attr)
-		
+
 		self.testmode = testmode
-		
-		self.handlers=self.get_implemented_handlers()
-		self.parameter_spec=self.get_parameter_spec()
+
+		self.handlers = self.get_implemented_handlers()
+		self.parameter_spec = self.get_parameter_spec()
 		self.action = None
 
-		if not len(sys.argv)<=1:
+		if not len(sys.argv) <= 1:
 			self.parse_environment()
 
 	def get_action(self):
-		if not len(sys.argv)>1:
+		if not len(sys.argv) > 1:
 			self.usage()
 			raise OCFErrUnimplemented("No action specified")
 		action = sys.argv[1]
-		if not action in self.handlers.keys()+["meta-data","usage"]:
+		if not action in self.handlers.keys() + ["meta-data", "usage"]:
 			raise RuntimeError("Specified action %s is not a defined handler" % action)
 		return action
 
@@ -131,34 +135,34 @@ class ResourceAgent(object):
 
 
 	def usage(self):
-		calls=self.handlers.keys()+["usage","meta-data"]
+		calls = self.handlers.keys() + ["usage", "meta-data"]
 		print "usage: %s {%s}" % (self.name, "|".join(calls))
 
 
 	def get_implemented_handlers(self):
-		valid_handlers={}
+		valid_handlers = {}
 		for handler in self.__OCF_VALID_HANDLERS:
-			if hasattr(self,"handle_%s" % handler):
-				handler_dict={}
+			if hasattr(self, "handle_%s" % handler):
+				handler_dict = {}
 				#handler_dict["name"] = handler
 				func = getattr(self, "handle_%s" % handler)
-				assert func.func_code.co_argcount>1
-				assert len(func.func_code.co_varnames)==func.func_code.co_argcount
-				assert func.func_code.co_varnames[0]=="self"
+				assert func.func_code.co_argcount > 1
+				assert len(func.func_code.co_varnames) == func.func_code.co_argcount
+				assert func.func_code.co_varnames[0] == "self"
 				#TODO: each parameter is required to have a default. Is this good?
-				assert len(func.func_code.co_varnames)-1==len(func.func_defaults)
-				i=0
+				assert len(func.func_code.co_varnames) - 1 == len(func.func_defaults)
+				i = 0
 				for var in func.func_code.co_varnames:
-					if var=="self":
+					if var == "self":
 						continue
 					func.func_defaults[i]
 					handler_dict[var] = func.func_defaults[i]
-					i+=1
+					i += 1
 				#TODO: add handler parameter validaton?
 				if "timeout" not in handler_dict.keys():
 					raise RuntimeError("Handler %s does not have parameter timeout" % handler)
 				valid_handlers[handler] = handler_dict
-				#valid_handlers.append(handler_dict)
+			#valid_handlers.append(handler_dict)
 		return valid_handlers
 
 	def get_parameter_spec(self):
@@ -166,14 +170,14 @@ class ResourceAgent(object):
 		params = []
 		for entry in dir(self):
 			if entry.startswith("OCFParameter_"):
-				name=entry[len("OCFParameter_"):]
-				parameter_class=getattr(self,entry)
+				name = entry[len("OCFParameter_"):]
+				parameter_class = getattr(self, entry)
 
 				param_instance = parameter_class()
-				if param_instance.type_def not in [types.IntType,types.StringType,types.BooleanType]:
+				if param_instance.type_def not in [types.IntType, types.StringType, types.BooleanType]:
 					raise RuntimeError("type_def property of parameter class is not of known types")
 
-				env_name = "OCF_RESKEY_"+name
+				env_name = "OCF_RESKEY_" + name
 				if param_instance.required and not env.has_key(env_name):
 					raise RuntimeError("os.environ is missing required parameter %s" % (env_name,))
 
@@ -196,38 +200,38 @@ class ResourceAgent(object):
 	def parse_environment(self):
 		env = os.environ
 		# on a meta-data or usage call return
-		if self.get_action() in ["meta-data","usage"]:
+		if self.get_action() in ["meta-data", "usage"]:
 			return
 		for key in env.keys():
 			if key.startswith("HA_"):
-				self.HA_ENVIRON[key]=env[key]
+				self.HA_ENVIRON[key] = env[key]
 			if key.startswith("OCF_"):
-				self.OCF_ENVIRON[key]=env[key]
+				self.OCF_ENVIRON[key] = env[key]
 
 		if not self.testmode:
 			for entry in self.__OCF_ENV_MANDATORY:
 				if entry not in self.OCF_ENVIRON.keys():
 					raise OCFErrArgs("Mandatory environment variable %s not found" % entry)
 
-
-			ocf_ra_version="%i.%i" % int(self.OCF_ENVIRON["OCF_RA_VERSION_MAJOR"]),int(self.OCF_ENVIRON["OCF_RA_VERSION_MINOR"])
+			ocf_ra_version = "%i.%i" % int(self.OCF_ENVIRON["OCF_RA_VERSION_MAJOR"]), int(
+				self.OCF_ENVIRON["OCF_RA_VERSION_MINOR"])
 			assert ocf_ra_version == "1.0"
 		else:
 			ocf_ra_version = "1.0"
 
 		if self.OCF_ENVIRON.has_key("OCF_RESOURCE_INSTANCE"):
-			pos=self.OCF_ENVIRON["OCF_RESOURCE_INSTANCE"].find(":")
-			if pos>=0:
-				self.res_instance=self.OCF_ENVIRON["OCF_RESOURCE_INSTANCE"][:pos]
-				self.res_clone=True
-				self.res_clone_id=int(self.OCF_ENVIRON["OCF_RESOURCE_INSTANCE"][pos+1:])
+			pos = self.OCF_ENVIRON["OCF_RESOURCE_INSTANCE"].find(":")
+			if pos >= 0:
+				self.res_instance = self.OCF_ENVIRON["OCF_RESOURCE_INSTANCE"][:pos]
+				self.res_clone = True
+				self.res_clone_id = int(self.OCF_ENVIRON["OCF_RESOURCE_INSTANCE"][pos + 1:])
 			else:
-				self.res_instance=self.OCF_ENVIRON["OCF_RESOURCE_INSTANCE"]
+				self.res_instance = self.OCF_ENVIRON["OCF_RESOURCE_INSTANCE"]
 
 		if self.OCF_ENVIRON.has_key("OCF_RESOURCE_TYPE"):
-			self.res_type=self.OCF_ENVIRON["OCF_RESOURCE_TYPE"]
+			self.res_type = self.OCF_ENVIRON["OCF_RESOURCE_TYPE"]
 		if self.OCF_ENVIRON.has_key("OCF_RESOURCE_PROVIDER"):
-			self.res_provider=self.OCF_ENVIRON["OCF_RESOURCE_PROVIDER"]
+			self.res_provider = self.OCF_ENVIRON["OCF_RESOURCE_PROVIDER"]
 
 
 	def meta_data_xml(self):
@@ -237,13 +241,14 @@ class ResourceAgent(object):
 		etree.SubElement(eResourceAgent, "shortdesc", {"lang": "en"}).text = self.SHORTDESC
 		eParameters = etree.SubElement(eResourceAgent, "parameters")
 		for p in self.parameter_spec:
-			eParameter=etree.Element("parameter", { "name": p.name, "unique": str(int(p.unique)), "required": str(int(p.required)) })
-			etree.SubElement(eParameter, "longdesc", { "lang": "en" }).text = p.longdesc
-			etree.SubElement(eParameter, "shortdesc", { "lang": "en" }).text = p.shortdesc
+			eParameter = etree.Element("parameter",
+									   {"name": p.name, "unique": str(int(p.unique)), "required": str(int(p.required))})
+			etree.SubElement(eParameter, "longdesc", {"lang": "en"}).text = p.longdesc
+			etree.SubElement(eParameter, "shortdesc", {"lang": "en"}).text = p.shortdesc
 			if p.default is not None:
-				content_data = { "type": p.type_name, "default": p.default }
+				content_data = {"type": p.type_name, "default": p.default}
 			else:
-				content_data = { "type": p.type_name }
+				content_data = {"type": p.type_name}
 			etree.SubElement(eParameter, "content", content_data)
 			eParameters.append(eParameter)
 
@@ -261,11 +266,12 @@ class ResourceAgent(object):
 
 	def meta_data(self):
 
-		xml_data=self.meta_data_xml()
+		xml_data = self.meta_data_xml()
 		#text="""<?xml version="1.0"?>
-#<!DOCTYPE resource-agent SYSTEM "ra-api-1.dtd">
-#"""
+		#<!DOCTYPE resource-agent SYSTEM "ra-api-1.dtd">
+		#"""
 		#sys.stdout.write(text)
 		xml_data.addprevious(etree.PI('xm'))
-		print etree.tostring(xml_data, pretty_print=True,xml_declaration=True, encoding='utf-8',doctype="""<!DOCTYPE resource-agent SYSTEM "ra-api-1.dtd">""")
+		print etree.tostring(xml_data, pretty_print=True, xml_declaration=True, encoding='utf-8',
+							 doctype="""<!DOCTYPE resource-agent SYSTEM "ra-api-1.dtd">""")
 		sys.stdout.write("\n")

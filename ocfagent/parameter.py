@@ -3,8 +3,10 @@
 
 import types
 
+
 class ResourceBaseParameter(object):
 	__CLASS_NAME_PREFIX = "OCFParameter_"
+
 	def __init__(self):
 		self._value = None
 		if not self.__class__.__name__.startswith(self.__CLASS_NAME_PREFIX):
@@ -20,7 +22,7 @@ class ResourceBaseParameter(object):
 	@property
 	def longdesc(self):
 		lines = self.__doc__.split("\n")
-		if len(lines)>1:
+		if len(lines) > 1:
 			return "\n".join(lines[1:])
 		else:
 			return None
@@ -69,25 +71,30 @@ class ResourceBaseParameter(object):
 		self.validate_type(value)
 		self._value = value
 
-	def validate_type(self,value = None):
+	def validate_type(self, value=None):
 		if value == None:
 			value = self._value
 		if type(value) != self.type_def:
-			raise RuntimeError("Type of value %r is not the same type as Resource Parameter type definition %r" % (self._value, self.type_def))
+			raise RuntimeError("Type of value %r is not the same type as Resource Parameter type definition %r" % (
+			self._value, self.type_def))
+
 
 class ResourceStringParameter(ResourceBaseParameter):
 	@property
 	def type_def(self):
 		return types.StringType
 
+
 class ResourceIntParameter(ResourceBaseParameter):
 	@property
 	def type_def(self):
 		return types.IntType
 
+
 class ResourceBoolParameter(ResourceBaseParameter):
 	_true = frozenset(("1", "t", "true", "yes", "t", True, 1))
 	_false = frozenset(("0", "f", "false", "no", "n", False, 0))
+
 	@property
 	def type_def(self):
 		return types.BooleanType
