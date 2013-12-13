@@ -7,7 +7,7 @@ Standards-Version: 3.9.5
 
 Package: python-ocfagent
 Architecture: all
-Depends: ${misc:Depends}, ${python:Depends}
+Depends: ${misc:Depends}, ${python:Depends}, python-lxml
 Description: OCF Python wrapper for ocf resource agents
  OCF (Open Cluster Framework) aka Pacemaker/Corosync
  Python wrapper for writing ocf resource agents
