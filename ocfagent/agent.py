@@ -76,7 +76,7 @@ class ResourceAgent(object):
 		self.action = None
 
 		if len(sys.argv) > 1:
-			if not action in ["meta-data","usage"]:
+			if not self.get_action in ["meta-data","usage"]:
 				self.parse_environment()
 				self.parse_parameters()
 
