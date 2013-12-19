@@ -38,7 +38,7 @@ class ResourceBaseParameter(object):
 
 	@property
 	@classmethod
-	def type_def(self):
+	def type_def(cls):
 		return types.NoneType
 
 	@property

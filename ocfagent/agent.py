@@ -54,7 +54,7 @@ class ResourceAgent(object):
 	__OCF_VALID_HANDLERS = __OCF_HANDLERS_MANDATORY + __OCF_HANDLERS_OPTIONAL
 	ATTRIBUTES_MANDATORY = ["VERSION", "LONGDESC", "SHORTDESC"]
 
-	def __init__(self, testmode=False):
+	def __init__(self):
 		self.OCF_ENVIRON = {}
 		self.HA_ENVIRON = {}
 		self.res_type = None
@@ -69,20 +69,20 @@ class ResourceAgent(object):
 			if not hasattr(self, "handle_%s" % attr):
 				raise error.OCFErrUnimplemented("Mandatory handler %s is not implemented" % attr)
 
-		self.testmode = testmode
 
 		self.handlers = self.get_implemented_handlers()
-		self.parameter_spec = self.get_parameter_spec()
-		self.action = None
 
-		if len(sys.argv) > 1:
-			if not self.get_action in ["meta-data","usage"]:
-				self.parse_environment()
-				self.parse_parameters()
+		action = self.get_action()
+		if action in ["usage", "meta-data"]:
+			self.parameter_spec = self.get_parameter_spec(check_env = False)
+		else:
+			self.parameter_spec = self.get_parameter_spec()
+			self.parse_environment()
+			self.parse_parameters()
 
 	def get_action(self):
-		if not len(sys.argv) > 1:
-			return None
+		if len(sys.argv) < 1:
+			return "usage"
 		action = sys.argv[1]
 		if not action in self.handlers.keys() + ["meta-data", "usage"]:
 			raise RuntimeError("Specified action %s is not a defined handler" % action)
@@ -90,15 +90,12 @@ class ResourceAgent(object):
 
 	def cmdline_call(self):
 		action = self.get_action()
-		if action is None:
+		if action == "usage":
 			self.usage()
 			raise error.OCFErrUnimplemented("No action specified")
 		if action == "meta-data":
 			self.meta_data()
-		elif action == "usage":
-			self.usage()
 		else:
-			self.action = action
 			handler = getattr(self, "handle_%s" % action)
 			handler()
 		#FIXME: if monitor check for OCF_CHECK_LEVEL
@@ -128,7 +125,7 @@ class ResourceAgent(object):
 				valid_handlers[handler] = handler_dict
 		return valid_handlers
 
-	def get_parameter_spec(self):
+	def get_parameter_spec(self, check_env = True):
 		env = os.environ
 		params = []
 		for entry in dir(self):
@@ -140,9 +137,10 @@ class ResourceAgent(object):
 				if param_instance.type_def not in [types.IntType, types.StringType, types.BooleanType]:
 					raise RuntimeError("type_def property of parameter class is not of known types")
 
-				env_name = "OCF_RESKEY_" + name
-				if param_instance.required and not env.has_key(env_name):
-					raise RuntimeError("os.environ is missing required parameter %s" % (env_name,))
+				if check_env:
+					env_name = "OCF_RESKEY_" + name
+					if param_instance.required and not env.has_key(env_name):
+						raise RuntimeError("os.environ is missing required parameter %s" % (env_name,))
 
 				if param_instance.shortdesc == None:
 					raise RuntimeError("Parameter %s short description is not present" % name)
@@ -171,16 +169,13 @@ class ResourceAgent(object):
 			if key.startswith("OCF_"):
 				self.OCF_ENVIRON[key] = env[key]
 
-		if not self.testmode:
-			for entry in self.__OCF_ENV_MANDATORY:
-				if entry not in self.OCF_ENVIRON.keys():
-					raise error.OCFErrArgs("Mandatory environment variable %s not found" % entry)
+		for entry in self.__OCF_ENV_MANDATORY:
+			if entry not in self.OCF_ENVIRON.keys():
+				raise error.OCFErrArgs("Mandatory environment variable %s not found" % entry)
 
-			ocf_ra_version = "%i.%i" % (int(self.OCF_ENVIRON["OCF_RA_VERSION_MAJOR"]),
-										int(self.OCF_ENVIRON["OCF_RA_VERSION_MINOR"]))
-			assert ocf_ra_version == "1.0"
-		else:
-			ocf_ra_version = "1.0"
+		ocf_ra_version = "%i.%i" % (int(self.OCF_ENVIRON["OCF_RA_VERSION_MAJOR"]),
+									int(self.OCF_ENVIRON["OCF_RA_VERSION_MINOR"]))
+		assert ocf_ra_version == "1.0"
 
 		if self.OCF_ENVIRON.has_key("OCF_RESOURCE_INSTANCE"):
 			pos = self.OCF_ENVIRON["OCF_RESOURCE_INSTANCE"].find(":")
@@ -197,10 +192,7 @@ class ResourceAgent(object):
 			self.res_provider = self.OCF_ENVIRON["OCF_RESOURCE_PROVIDER"]
 
 	def parse_parameters(self):
-		if self.testmode == False:
-			assert len(self.OCF_ENVIRON)>0
-		if self.get_action() in ["meta-data", "usage"]:
-			return
+		assert len(self.OCF_ENVIRON)>0
 		for param_cls in self.parameter_spec:
 			cls_name = param_cls.name
 			env_name = "%s%s" % (OCF_RESKEY_PREFIX, cls_name)
@@ -254,10 +246,6 @@ class ResourceAgent(object):
 	def meta_data(self):
 
 		xml_data = self.meta_data_xml()
-		#text="""<?xml version="1.0"?>
-		#<!DOCTYPE resource-agent SYSTEM "ra-api-1.dtd">
-		#"""
-		#sys.stdout.write(text)
 		xml_data.addprevious(etree.PI('xm'))
 		print etree.tostring(xml_data, pretty_print=True, xml_declaration=True, encoding='utf-8',
 							 doctype="""<!DOCTYPE resource-agent SYSTEM "ra-api-1.dtd">""")
