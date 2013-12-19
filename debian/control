@@ -1,4 +1,4 @@
-Source: ocfagent
+Source: pyocfagent
 Maintainer: Dr. Torge Szczepanek <info@cygnusnetworks.de>
 Section: python
 Priority: optional
