@@ -1,4 +1,7 @@
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
 
+# Defined exit codes. See: http://www.opencf.org/cgi-bin/viewcvs.cgi/specs/ra/resource-agent-api.txt?rev=HEAD
 
 OCF_SUCCESS = 0
 OCF_ERR_GENERIC = 1
@@ -19,8 +22,9 @@ class ResourceAgentException(SystemExit):
 		SystemExit.__init__(self, error_code)
 
 	def __str__(self):
-		return repr(self.error_code)
+		return repr(self.message)
 
+# Resource agent exceptions. See: http://www.linux-ha.org/doc/dev-guides/ra-dev-guide.html for usage
 
 class OCFSuccess(ResourceAgentException):
 	"""No error, action succeeded completely.
