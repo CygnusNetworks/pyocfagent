@@ -233,7 +233,7 @@ class ResourceAgent(object):
 			etree.SubElement(eParameter, "longdesc", {"lang": "en"}).text = p.longdesc
 			etree.SubElement(eParameter, "shortdesc", {"lang": "en"}).text = p.shortdesc
 			if p.default is not None:
-				content_data = {"type": p.type_name, "default": p.default}
+				content_data = {"type": p.type_name, "default": str(p.default)}
 			else:
 				content_data = {"type": p.type_name}
 			etree.SubElement(eParameter, "content", content_data)
