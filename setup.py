@@ -13,7 +13,7 @@ setup(name="ocfagent",
 	classifiers = [
 		"License :: OSI Approved :: GNU General Public License v2 (GPLv2)",
 		"Programming Language :: Python",
-		"Development Status :: 3 - Alpha",
+		"Development Status :: 4 - Beta",
 		"Operating System :: POSIX"
 	]
 )
