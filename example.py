@@ -18,7 +18,7 @@ class TestOCF(ocfagent.agent.ResourceAgent):
 	LONGDESC = "This is a TestOCF agent simply for demonstrating functionality"
 	"""Long description of your agent for xml meta-data"""
 
-
+        # Implement parameters. All parameters must be prefixed by OCFParameter_
 	class OCFParameter_test1(ocfagent.parameter.ResourceStringParameter):
 		"""test1 parameter
 This is a OCF Ressource test parameter with string type"""
