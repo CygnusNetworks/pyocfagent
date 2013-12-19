@@ -18,6 +18,7 @@ OCF_FAILED_MASTER = 9
 class ResourceAgentException(SystemExit):
 	def __init__(self, error_code, message):
 		self.error_code = error_code
+		self.message = message
 		print "ResourceAgentException:", message, "- exit code", error_code
 		SystemExit.__init__(self, error_code)
 
