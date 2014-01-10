@@ -13,6 +13,7 @@ import error
 
 OCF_RESKEY_PREFIX = "OCF_RESKEY_"
 
+
 class AttributeVerifier(type):
 	"""This metaclass carries out two checks.
 
@@ -45,12 +46,11 @@ class AttributeVerifier(type):
 		return cls.instance
 
 
-class ResourceAgent(object): # pylint: disable=R0902
+class ResourceAgent(object):  # pylint: disable=R0902
 	"""Resource Agent class. Derive agent from this class"""
 	__metaclass__ = AttributeVerifier
 	"""meta class to validate attributes"""
-	__OCF_ENV_MANDATORY = ["OCF_ROOT", "OCF_RA_VERSION_MAJOR", "OCF_RA_VERSION_MINOR", "OCF_RESOURCE_INSTANCE",
-						   "OCF_RESOURCE_TYPE"]
+	__OCF_ENV_MANDATORY = ["OCF_ROOT", "OCF_RA_VERSION_MAJOR", "OCF_RA_VERSION_MINOR", "OCF_RESOURCE_INSTANCE", "OCF_RESOURCE_TYPE"]
 	"""Mandatory environment variables to be defined on call
 	excluding meta-data and validate-all (implemented in ResourceAgent)"""
 
@@ -121,7 +121,6 @@ class ResourceAgent(object): # pylint: disable=R0902
 			handler = getattr(self, "handle_%s" % action)
 			handler()
 
-
 	def usage(self):
 		"""Output usage to stdout listing all implemented handlers"""
 		calls = self.handlers.keys() + ["usage", "meta-data"]
@@ -167,12 +166,12 @@ class ResourceAgent(object): # pylint: disable=R0902
 				# Do not check environment, if check_env is False (usage and meta-data calls)
 				if check_env:
 					env_name = "OCF_RESKEY_" + name
-					if param_instance.required and not env.has_key(env_name):
+					if param_instance.required and not env_name in env:
 						raise RuntimeError("os.environ is missing required parameter %s" % (env_name,))
 				# Extract descriptions
-				if param_instance.shortdesc == None:
+				if param_instance.shortdesc is None:
 					raise RuntimeError("Parameter %s short description is not present" % name)
-				if param_instance.longdesc == None:
+				if param_instance.longdesc is None:
 					raise RuntimeError("Parameter %s long description is not present" % name)
 
 				params.append(param_instance)
@@ -208,12 +207,11 @@ class ResourceAgent(object): # pylint: disable=R0902
 					raise error.OCFErrArgs("Mandatory environment variable %s not found" % entry)
 
 			# Excpect a OCF RA Version 1.0 here
-			ocf_ra_version = "%i.%i" % (int(self.OCF_ENVIRON["OCF_RA_VERSION_MAJOR"]),
-									int(self.OCF_ENVIRON["OCF_RA_VERSION_MINOR"]))
+			ocf_ra_version = "%i.%i" % (int(self.OCF_ENVIRON["OCF_RA_VERSION_MAJOR"]), int(self.OCF_ENVIRON["OCF_RA_VERSION_MINOR"]))
 			assert ocf_ra_version == "1.0"
 
 		# Check if this is a clone
-		if self.OCF_ENVIRON.has_key("OCF_RESOURCE_INSTANCE"):
+		if "OCF_RESOURCE_INSTANCE" in self.OCF_ENVIRON:
 			pos = self.OCF_ENVIRON["OCF_RESOURCE_INSTANCE"].find(":")
 			if pos >= 0:
 				self.res_instance = self.OCF_ENVIRON["OCF_RESOURCE_INSTANCE"][:pos]
@@ -223,14 +221,14 @@ class ResourceAgent(object): # pylint: disable=R0902
 				self.res_instance = self.OCF_ENVIRON["OCF_RESOURCE_INSTANCE"]
 
 		if self.testmode is False:
-			if self.OCF_ENVIRON.has_key("OCF_RESOURCE_TYPE"):
+			if "OCF_RESOURCE_TYPE" in self.OCF_ENVIRON:
 				self.res_type = self.OCF_ENVIRON["OCF_RESOURCE_TYPE"]
-			if self.OCF_ENVIRON.has_key("OCF_RESOURCE_PROVIDER"):
+			if "OCF_RESOURCE_PROVIDER" in self.OCF_ENVIRON:
 				self.res_provider = self.OCF_ENVIRON["OCF_RESOURCE_PROVIDER"]
 
 	def parse_parameters(self):
 		"""Parse parameters (given with OCF_RESKEY_ prefix)"""
-		assert len(self.OCF_ENVIRON)>0
+		assert len(self.OCF_ENVIRON) > 0
 		for param_cls in self.parameter_spec:
 			cls_name = param_cls.name
 			env_name = "%s%s" % (OCF_RESKEY_PREFIX, cls_name)
@@ -241,27 +239,25 @@ class ResourceAgent(object): # pylint: disable=R0902
 			elif param_cls.type_def == types.BooleanType:
 				param_cls.value = self.OCF_ENVIRON[env_name]
 
-	def get_parameter(self,name):
+	def get_parameter(self, name):
 		"""get a specific parameter"""
 		found_cls = None
 		for param_cls in self.parameter_spec:
 			if name == param_cls.name:
 				found_cls = param_cls
 
-		assert found_cls != None
+		assert found_cls is None
 		return found_cls.value
-
 
 	def meta_data_xml(self):
 		"""Generate meta-data in XML format"""
-		eResourceAgent = etree.Element("resource-agent", {"name": self.name, "version": self.VERSION}) #pylint: disable=E1101
+		eResourceAgent = etree.Element("resource-agent", {"name": self.name, "version": self.VERSION})  # pylint: disable=E1101
 		etree.SubElement(eResourceAgent, "version").text = "1.0"
-		etree.SubElement(eResourceAgent, "longdesc", {"lang": "en"}).text = self.LONGDESC  #pylint: disable=E1101
-		etree.SubElement(eResourceAgent, "shortdesc", {"lang": "en"}).text = self.SHORTDESC  #pylint: disable=E1101
+		etree.SubElement(eResourceAgent, "longdesc", {"lang": "en"}).text = self.LONGDESC  # pylint: disable=E1101
+		etree.SubElement(eResourceAgent, "shortdesc", {"lang": "en"}).text = self.SHORTDESC  # pylint: disable=E1101
 		eParameters = etree.SubElement(eResourceAgent, "parameters")
 		for p in self.parameter_spec:
-			eParameter = etree.Element("parameter",
-									   {"name": p.name, "unique": str(int(p.unique)), "required": str(int(p.required))})
+			eParameter = etree.Element("parameter", {"name": p.name, "unique": str(int(p.unique)), "required": str(int(p.required))})
 			etree.SubElement(eParameter, "longdesc", {"lang": "en"}).text = p.longdesc
 			etree.SubElement(eParameter, "shortdesc", {"lang": "en"}).text = p.shortdesc
 			if p.default is not None:
@@ -287,6 +283,5 @@ class ResourceAgent(object): # pylint: disable=R0902
 		"""Output meta data to stdout including doctype"""
 		xml_data = self.meta_data_xml()
 		xml_data.addprevious(etree.PI('xm'))
-		print etree.tostring(xml_data, pretty_print=True, xml_declaration=True, encoding='utf-8',
-							 doctype="""<!DOCTYPE resource-agent SYSTEM "ra-api-1.dtd">""")
+		print etree.tostring(xml_data, pretty_print=True, xml_declaration=True, encoding='utf-8', doctype="""<!DOCTYPE resource-agent SYSTEM "ra-api-1.dtd">""")
 		sys.stdout.write("\n")

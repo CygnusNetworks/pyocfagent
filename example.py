@@ -8,6 +8,7 @@ import ocfagent.agent
 import ocfagent.error
 import ocfagent.parameter
 
+
 class TestOCF(ocfagent.agent.ResourceAgent):
 	"""Test OCF agent
 	"""
@@ -47,7 +48,7 @@ This is a OCF Ressource test parameter with bool type"""
 		def default(self):
 			return True
 
-	def handle_start(self,timeout=10): # pylint: disable=W0613
+	def handle_start(self, timeout=10): # pylint: disable=W0613
 		"""Mandatory Start handler to be implemented"""
 		try:
 			print "handle_start called with parameters", self.get_parameter("test1"), self.get_parameter("test2")
@@ -58,7 +59,7 @@ This is a OCF Ressource test parameter with bool type"""
 				print "ERROR:", line
 			raise ocfagent.error.OCFErrGeneric(msg)
 
-	def handle_stop(self,timeout=10): # pylint: disable=W0613
+	def handle_stop(self, timeout=10): # pylint: disable=W0613
 		"""Mandatory Stop handler to be implemented"""
 		try:
 			print "handle stop called with parameters", self.get_parameter("test1"), self.get_parameter("test2")
@@ -69,8 +70,7 @@ This is a OCF Ressource test parameter with bool type"""
 				print "ERROR:", line
 			raise ocfagent.error.OCFErrGeneric(msg)
 
-
-	def handle_monitor(self,timeout=10): # pylint: disable=W0613
+	def handle_monitor(self, timeout=10): # pylint: disable=W0613
 		"""Mandatory monitor handler to be implemented"""
 		try:
 			print "handle monitor called with parameters", self.get_parameter("test1"), self.get_parameter("test2")

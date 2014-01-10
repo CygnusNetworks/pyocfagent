@@ -15,7 +15,7 @@ class ResourceBaseParameter(object):
 	@property
 	def shortdesc(self):
 		"""extracts the documentation from class docstring"""
-		if self.__doc__ != None:
+		if self.__doc__ is None:
 			return self.__doc__.split("\n")[0]
 		else:
 			return None
@@ -39,7 +39,6 @@ class ResourceBaseParameter(object):
 		"""get the name of the resource from class name removing OCFParameter_ prefix"""
 		return str(self.__class__.__name__[len(self.__CLASS_NAME_PREFIX):])
 
-
 	@property
 	@classmethod
 	def type_def(cls):
@@ -47,7 +46,7 @@ class ResourceBaseParameter(object):
 		return types.NoneType
 
 	@property
-	def type_name(self): #pylint: disable=R0201
+	def type_name(self):  # pylint: disable=R0201
 		"""get the type name for meta-data here from specified type"""
 		if self.type_def == types.IntType:
 			return "integer"
@@ -57,12 +56,12 @@ class ResourceBaseParameter(object):
 			return "boolean"
 
 	@property
-	def default(self): #pylint: disable=R0201
+	def default(self):  # pylint: disable=R0201
 		"""return default value. None if none is specified"""
 		return None
 
 	@property
-	def unique(self): #pylint: disable=R0201
+	def unique(self):  # pylint: disable=R0201
 		"""define this parameter as unique. See section 2.4 of OCF Spec
 		The meta data allows the RA to flag one or more instance parameters as
 'unique'. This is a hint to the RM or higher level configuration tools
@@ -72,14 +71,14 @@ resource type.
 		return True
 
 	@property
-	def required(self): #pylint: disable=R0201
+	def required(self):  # pylint: disable=R0201
 		"""define this parameter to be required if true"""
 		return False
 
 	@property
 	def value(self):
 		"""returns the parameter value is set. returns default value if not set"""
-		if self._value == None:
+		if self._value is None:
 			self.validate_type(self.default)
 			return self.default
 		else:
@@ -94,11 +93,10 @@ resource type.
 
 	def validate_type(self, value=None):
 		"""check if type of set value is consistent with type_def"""
-		if value == None:
+		if value is None:
 			value = self._value
 		if type(value) != self.type_def:
-			raise RuntimeError("Type of value %r is not the same type as Resource Parameter type definition %r" % (
-			self._value, self.type_def))
+			raise RuntimeError("Type of value %r is not the same type as Resource Parameter type definition %r" % (self._value, self.type_def))
 
 
 class ResourceStringParameter(ResourceBaseParameter):
@@ -126,7 +124,7 @@ class ResourceBoolParameter(ResourceBaseParameter):
 
 	@property
 	def value(self):
-		if self._value == None:
+		if self._value is None:
 			self.validate_type(self.default)
 			return self.default
 		else:
@@ -134,7 +132,7 @@ class ResourceBoolParameter(ResourceBaseParameter):
 			return self._value
 
 	@value.setter
-	def value(self, val): #pylint: disable=R0201,W0221
+	def value(self, val):  # pylint: disable=R0201,W0221
 		if val in self._true:
 			self._value = True
 			return

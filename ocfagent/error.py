@@ -27,6 +27,7 @@ class ResourceAgentException(SystemExit):
 
 # Resource agent exceptions. See: http://www.linux-ha.org/doc/dev-guides/ra-dev-guide.html for usage
 
+
 class OCFSuccess(ResourceAgentException):
 	"""No error, action succeeded completely.
 	The action completed successfully. This is the expected return code for any successful start, stop, promote,
@@ -41,6 +42,7 @@ class OCFSuccess(ResourceAgentException):
 	"""
 	def __init__(self, message):
 		ResourceAgentException.__init__(self, OCF_SUCCESS, message)
+
 
 class OCFErrGeneric(ResourceAgentException):
 	"""generic or unspecified error (current practice)
@@ -68,6 +70,7 @@ class OCFErrArgs(ResourceAgentException):
 	def __init__(self, message):
 		ResourceAgentException.__init__(self, OCF_ERR_ARGS, message)
 
+
 class OCFErrUnimplemented(ResourceAgentException):
 	"""unimplemented feature (for example, "reload")
 	The resource agent was instructed to execute an action that the agent does not implement.
@@ -78,6 +81,7 @@ class OCFErrUnimplemented(ResourceAgentException):
 	"""
 	def __init__(self, message):
 		ResourceAgentException.__init__(self, OCF_ERR_UNIMPLEMENTED, message)
+
 
 class OCFErrPerm(ResourceAgentException):
 	"""user had insufficient privilege
@@ -90,6 +94,7 @@ class OCFErrPerm(ResourceAgentException):
 	def __init__(self, message):
 		ResourceAgentException.__init__(self, OCF_ERR_PERM, message)
 
+
 class OCFErrInstalled(ResourceAgentException):
 	"""program is not installed
 	The action failed because a required component is missing on the node where the action was executed.
@@ -99,6 +104,7 @@ class OCFErrInstalled(ResourceAgentException):
 	restarting the resource on a different node (where the required files or binaries may be present).	"""
 	def __init__(self, message):
 		ResourceAgentException.__init__(self, OCF_ERR_INSTALLED, message)
+
 
 class OCFErrConfigured(ResourceAgentException):
 	"""program is not configured
@@ -110,6 +116,7 @@ class OCFErrConfigured(ResourceAgentException):
 	the resource, and wait for administrator intervention.	"""
 	def __init__(self, message):
 		ResourceAgentException.__init__(self, OCF_ERR_CONFIGURED, message)
+
 
 class OCFNotRunning(ResourceAgentException):
 	"""program is not running
@@ -125,6 +132,7 @@ class OCFNotRunning(ResourceAgentException):
 	def __init__(self, message):
 		ResourceAgentException.__init__(self, OCF_NOT_RUNNING, message)
 
+
 class OCFRunningMaster(ResourceAgentException):
 	"""The resource was found to be running in the Master role. This applies only to stateful (Master/Slave)
 	resources, and only to their monitor action.
@@ -134,6 +142,7 @@ class OCFRunningMaster(ResourceAgentException):
 	"""
 	def __init__(self, message):
 		ResourceAgentException.__init__(self, OCF_RUNNING_MASTER, message)
+
 
 class OCFFailedMaster(ResourceAgentException):
 	"""The resource was found to have failed in the Master role. This applies only to stateful (Master/Slave)
