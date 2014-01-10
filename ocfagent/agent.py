@@ -97,7 +97,7 @@ class ResourceAgent(object): # pylint: disable=R0902
 
 	def get_action(self):
 		# if no cmdline parameter is given, call action is usage
-		if len(sys.argv) < 1:
+		if len(sys.argv) <= 1:
 			return "usage"
 		# check if the action is a valid implemented handler
 		action = sys.argv[1]
