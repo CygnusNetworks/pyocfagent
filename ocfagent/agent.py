@@ -63,9 +63,10 @@ class ResourceAgent(object): # pylint: disable=R0902
 	ATTRIBUTES_MANDATORY = ["VERSION", "LONGDESC", "SHORTDESC"]
 	"""Attributes of class to be define in derived classes"""
 
-	def __init__(self):
+	def __init__(self, testmode=False):
 		self.OCF_ENVIRON = {}
 		self.HA_ENVIRON = {}
+		self.testmode = testmode
 		self.res_type = None
 		self.res_instance = None
 		self.res_clone = False
@@ -88,10 +89,10 @@ class ResourceAgent(object): # pylint: disable=R0902
 		# Special actions which do not need all environment and parameter specs or variables
 		# Allow call without it to help developers implementing
 		if action in ["usage", "meta-data"]:
-			self.parameter_spec = self.get_parameter_spec(check_env = False)
+			self.parameter_spec = self.get_parameter_spec(check_env=False)
 		else:
 			# real call of a handler. Parse environment and parameters
-			self.parameter_spec = self.get_parameter_spec()
+			self.parameter_spec = self.get_parameter_spec(check_env=not self.testmode)
 			self.parse_environment()
 			self.parse_parameters()
 
@@ -150,7 +151,7 @@ class ResourceAgent(object): # pylint: disable=R0902
 				valid_handlers[handler] = handler_dict
 		return valid_handlers
 
-	def get_parameter_spec(self, check_env = True):
+	def get_parameter_spec(self, check_env=True):
 		"""Get parameter specification from OCFParameter_* classes"""
 		env = os.environ
 		params = []
@@ -199,14 +200,17 @@ class ResourceAgent(object): # pylint: disable=R0902
 			if key.startswith("OCF_"):
 				self.OCF_ENVIRON[key] = env[key]
 
-		for entry in self.__OCF_ENV_MANDATORY:
-			if entry not in self.OCF_ENVIRON.keys():
-				raise error.OCFErrArgs("Mandatory environment variable %s not found" % entry)
+		if self.testmode:
+			ocf_ra_version = "1.0"
+		else:
+			for entry in self.__OCF_ENV_MANDATORY:
+				if entry not in self.OCF_ENVIRON.keys():
+					raise error.OCFErrArgs("Mandatory environment variable %s not found" % entry)
 
-		# Excpect a OCF RA Version 1.0 here
-		ocf_ra_version = "%i.%i" % (int(self.OCF_ENVIRON["OCF_RA_VERSION_MAJOR"]),
+			# Excpect a OCF RA Version 1.0 here
+			ocf_ra_version = "%i.%i" % (int(self.OCF_ENVIRON["OCF_RA_VERSION_MAJOR"]),
 									int(self.OCF_ENVIRON["OCF_RA_VERSION_MINOR"]))
-		assert ocf_ra_version == "1.0"
+			assert ocf_ra_version == "1.0"
 
 		# Check if this is a clone
 		if self.OCF_ENVIRON.has_key("OCF_RESOURCE_INSTANCE"):
@@ -218,10 +222,11 @@ class ResourceAgent(object): # pylint: disable=R0902
 			else:
 				self.res_instance = self.OCF_ENVIRON["OCF_RESOURCE_INSTANCE"]
 
-		if self.OCF_ENVIRON.has_key("OCF_RESOURCE_TYPE"):
-			self.res_type = self.OCF_ENVIRON["OCF_RESOURCE_TYPE"]
-		if self.OCF_ENVIRON.has_key("OCF_RESOURCE_PROVIDER"):
-			self.res_provider = self.OCF_ENVIRON["OCF_RESOURCE_PROVIDER"]
+		if self.testmode is False:
+			if self.OCF_ENVIRON.has_key("OCF_RESOURCE_TYPE"):
+				self.res_type = self.OCF_ENVIRON["OCF_RESOURCE_TYPE"]
+			if self.OCF_ENVIRON.has_key("OCF_RESOURCE_PROVIDER"):
+				self.res_provider = self.OCF_ENVIRON["OCF_RESOURCE_PROVIDER"]
 
 	def parse_parameters(self):
 		"""Parse parameters (given with OCF_RESKEY_ prefix)"""
