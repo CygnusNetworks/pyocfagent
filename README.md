@@ -21,7 +21,7 @@ dpkg-buildpackage
 Usage
 =====
 
-See provided example.py for a detailed example.
+See provided example.py for a detailed example. For testing purposes you can set testmode=True on constructor. This relaxes environment checking for mandatory environment variables. Only OCF_RESKEY_variable= and OCF_RESOURCE_INSTANCE must be present in the enviroment variables. Use this on development for testing actions without a running pacemaker/corosync framework.
 
 Short example:
 
@@ -63,7 +63,7 @@ This is a OCF Ressource test parameter with string type"""
                 pass
 
 if __name__ == "__main__":
-        ocf=TestOCF()
+        ocf=TestOCF(testmode=False)  # set to True, to enable script testing
         ocf.cmdline_call()
 </code>
 </pre>
