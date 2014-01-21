@@ -246,7 +246,7 @@ class ResourceAgent(object):  # pylint: disable=R0902
 			if name == param_cls.name:
 				found_cls = param_cls
 
-		assert found_cls is None
+		assert found_cls is not None
 		return found_cls.value
 
 	def meta_data_xml(self):
