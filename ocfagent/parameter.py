@@ -15,7 +15,7 @@ class ResourceBaseParameter(object):
 	@property
 	def shortdesc(self):
 		"""extracts the documentation from class docstring"""
-		if self.__doc__ is None:
+		if self.__doc__ is not None:
 			return self.__doc__.split("\n")[0]
 		else:
 			return None
