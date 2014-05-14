@@ -2,9 +2,9 @@
 # -*- coding: utf-8 -*-
 
 from ocfagent import __author__, __copyright__, __license__, __version__, __maintainer__, __email__, __status__ # pylint: disable=W0611
-from distutils.core import setup
+import setuptools
 
-setup(name="ocfagent",
+setuptools.setup(name="ocfagent",
 	version=__version__,
 	author=__author__,
 	author_email=__email__,
@@ -15,5 +15,6 @@ setup(name="ocfagent",
 		"Programming Language :: Python",
 		"Development Status :: 4 - Beta",
 		"Operating System :: POSIX"
-	]
+	],
+	install_requires=['lxml'],
 )
