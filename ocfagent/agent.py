@@ -124,7 +124,7 @@ class ResourceAgent(object):  # pylint: disable=R0902
 	def usage(self):
 		"""Output usage to stdout listing all implemented handlers"""
 		calls = self.handlers.keys() + ["usage", "meta-data"]
-		print "usage: %s {%s}" % (self.name, "|".join(calls))
+		print ("usage: %s {%s}" % (self.name, "|".join(calls)))
 
 	def get_implemented_handlers(self):
 		"""get all implemented handlers by searching handle_* functions in class"""
@@ -232,11 +232,11 @@ class ResourceAgent(object):  # pylint: disable=R0902
 		for param_cls in self.parameter_spec:
 			cls_name = param_cls.name
 			env_name = "%s%s" % (OCF_RESKEY_PREFIX, cls_name)
-			if param_cls.type_def == types.IntType:
+			if isinstance(param_cls.type_def, int):
 				param_cls.value = int(self.OCF_ENVIRON[env_name])
-			elif param_cls.type_def == types.StringType:
+			elif isinstance(param_cls.type_def, str):
 				param_cls.value = str(self.OCF_ENVIRON[env_name])
-			elif param_cls.type_def == types.BooleanType:
+			elif isinstance(param_cls.type_def, bool):
 				param_cls.value = self.OCF_ENVIRON[env_name]
 
 	def get_parameter(self, name):
@@ -251,37 +251,36 @@ class ResourceAgent(object):  # pylint: disable=R0902
 
 	def meta_data_xml(self):
 		"""Generate meta-data in XML format"""
-		eResourceAgent = etree.Element("resource-agent", {"name": self.name, "version": self.VERSION})  # pylint: disable=E1101
-		etree.SubElement(eResourceAgent, "version").text = "1.0"
-		etree.SubElement(eResourceAgent, "longdesc", {"lang": "en"}).text = self.LONGDESC  # pylint: disable=E1101
-		etree.SubElement(eResourceAgent, "shortdesc", {"lang": "en"}).text = self.SHORTDESC  # pylint: disable=E1101
-		eParameters = etree.SubElement(eResourceAgent, "parameters")
+		e_resourceagent = etree.Element("resource-agent", {"name": self.name, "version": self.VERSION})  # pylint: disable=E1101
+		etree.SubElement(e_resourceagent, "version").text = "1.0"
+		etree.SubElement(e_resourceagent, "longdesc", {"lang": "en"}).text = self.LONGDESC  # pylint: disable=E1101
+		etree.SubElement(e_resourceagent, "shortdesc", {"lang": "en"}).text = self.SHORTDESC  # pylint: disable=E1101
+		e_parameters = etree.SubElement(e_resourceagent, "parameters")
 		for p in self.parameter_spec:
-			eParameter = etree.Element("parameter", {"name": p.name, "unique": str(int(p.unique)), "required": str(int(p.required))})
-			etree.SubElement(eParameter, "longdesc", {"lang": "en"}).text = p.longdesc
-			etree.SubElement(eParameter, "shortdesc", {"lang": "en"}).text = p.shortdesc
+			e_parameter = etree.Element("parameter", {"name": p.name, "unique": str(int(p.unique)), "required": str(int(p.required))})
+			etree.SubElement(e_parameter, "longdesc", {"lang": "en"}).text = p.longdesc
+			etree.SubElement(e_parameter, "shortdesc", {"lang": "en"}).text = p.shortdesc
 			if p.default is not None:
 				content_data = {"type": p.type_name, "default": str(p.default)}
 			else:
 				content_data = {"type": p.type_name}
-			etree.SubElement(eParameter, "content", content_data)
-			eParameters.append(eParameter)
+			etree.SubElement(e_parameter, "content", content_data)
+			e_parameters.append(e_parameter)
 
-		eActions = etree.SubElement(eResourceAgent, "actions")
+		e_actions = etree.SubElement(e_resourceagent, "actions")
 		for handler in self.handlers.keys():
 
-			h = {}
-			h["name"] = handler
+			h = {"name": handler}
 			for key in self.handlers[handler]:
 				h[key] = str(self.handlers[handler][key])
 
-			eActions.append(etree.Element("action", h))
+			e_actions.append(etree.Element("action", h))
 
-		return eResourceAgent
+		return e_resourceagent
 
 	def meta_data(self):
 		"""Output meta data to stdout including doctype"""
 		xml_data = self.meta_data_xml()
 		xml_data.addprevious(etree.PI('xm'))
-		print etree.tostring(xml_data, pretty_print=True, xml_declaration=True, encoding='utf-8', doctype="""<!DOCTYPE resource-agent SYSTEM "ra-api-1.dtd">""")
+		print (etree.tostring(xml_data, pretty_print=True, xml_declaration=True, encoding='utf-8', doctype="""<!DOCTYPE resource-agent SYSTEM "ra-api-1.dtd">"""))
 		sys.stdout.write("\n")
