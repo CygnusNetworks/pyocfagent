@@ -1,3 +1,9 @@
+pyocfagent (0.10+cygnus1) jessie; urgency=low
+
+  * Build for jessie
+
+ -- Peter Adam <p.adam@cygnusnetworks.de>  Mon, 23 Nov 2015 11:53:28 +0100
+
 pyocfagent (0.10) UNRELEASED; urgency=low
 
   * Initial release
