@@ -7,7 +7,7 @@ Release:        1%{?dist}
 Summary:        Python ipcalc module
 
 License:        Python
-Source0:        python-ocfagentc-%{version}.tar.gz
+Source0:        python-ocfagent-%{version}.tar.gz
 
 BuildArch:      noarch
 BuildRequires:  python2-devel
