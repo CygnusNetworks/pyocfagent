@@ -1,13 +1,13 @@
-%global pyname ipcalc
+%global pyname ocfagent
 %global version 0.10
 
 Name:           python-%{pyname}
 Version:        %{version}
 Release:        1%{?dist}
-Summary:        Python ipcalc module
+Summary:        Python OCF Resource Agent Framework for Corosync/Pacemaker
 
 License:        Python
-Source0:        python-ocfagent-%{version}.tar.gz
+Source0:        python-%{pyname}-%{version}.tar.gz
 
 BuildArch:      noarch
 BuildRequires:  python2-devel
