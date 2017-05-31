@@ -7,9 +7,9 @@ import types
 
 from lxml import etree
 
-#TODO: monitor OCF_CHECK_LEVEL not yet implemented
+# TODO: monitor OCF_CHECK_LEVEL not yet implemented
 
-import error
+from . import error
 
 OCF_RESKEY_PREFIX = "OCF_RESKEY_"
 
@@ -35,8 +35,6 @@ class AttributeVerifier(type):
 
 	def __call__(cls, *args, **kwargs):
 		"""Object constructor."""
-
-		#obj = type.__call__(cls, *args, **kwargs)
 		for attr in cls.ATTRIBUTES_MANDATORY:
 			if not hasattr(cls, attr):
 				raise RuntimeError("attribute %r required on class %r" % (attr, cls.name))
@@ -102,7 +100,7 @@ class ResourceAgent(object):  # pylint: disable=R0902
 			return "usage"
 		# check if the action is a valid implemented handler
 		action = sys.argv[1]
-		if not action in self.handlers.keys() + ["meta-data", "usage"]:
+		if action not in self.handlers.keys() + ["meta-data", "usage"]:
 			raise RuntimeError("Specified action %s is not a defined handler" % action)
 		return action
 
@@ -166,7 +164,7 @@ class ResourceAgent(object):  # pylint: disable=R0902
 				# Do not check environment, if check_env is False (usage and meta-data calls)
 				if check_env:
 					env_name = "OCF_RESKEY_" + name
-					if param_instance.required and not env_name in env:
+					if param_instance.required and env_name not in env:
 						raise RuntimeError("os.environ is missing required parameter %s" % (env_name,))
 				# Extract descriptions
 				if param_instance.shortdesc is None:
