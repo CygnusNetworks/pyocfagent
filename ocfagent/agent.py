@@ -230,11 +230,11 @@ class ResourceAgent(object):  # pylint: disable=R0902
 		for param_cls in self.parameter_spec:
 			cls_name = param_cls.name
 			env_name = "%s%s" % (OCF_RESKEY_PREFIX, cls_name)
-			if param_cls.type_def == types.IntType:  # pylint:disable=E721
+			if param_cls.type_def == types.IntType:  # nopep8
 				param_cls.value = int(self.OCF_ENVIRON[env_name])
-			elif param_cls.type_def == types.StringType:  # pylint:disable=E721
+			elif param_cls.type_def == types.StringType:  # nopep8
 				param_cls.value = str(self.OCF_ENVIRON[env_name])
-			elif param_cls.type_def == types.BooleanType:  # pylint:disable=E721
+			elif param_cls.type_def == types.BooleanType:  # nopep8
 				param_cls.value = self.OCF_ENVIRON[env_name]
 
 	def get_parameter(self, name):
