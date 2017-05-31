@@ -14,7 +14,7 @@ import error
 OCF_RESKEY_PREFIX = "OCF_RESKEY_"
 
 
-class AttributeVerifierMetaClass(type):
+class AttributeVerifier(type):
 	"""This metaclass carries out two checks.
 
 	At class construction time it verifies that an attribute
@@ -45,10 +45,10 @@ class AttributeVerifierMetaClass(type):
 
 		return cls.instance
 
-AttributeVerifier = AttributeVerifierMetaClass('AttributeVerifier', (object, ), {})
 
-class ResourceAgent(AttributeVerifier):  # pylint: disable=R0902
+class ResourceAgent(object):  # pylint: disable=R0902
 	"""Resource Agent class. Derive agent from this class"""
+	__metaclass__ = AttributeVerifier
 	"""meta class to validate attributes"""
 	__OCF_ENV_MANDATORY = ["OCF_ROOT", "OCF_RA_VERSION_MAJOR", "OCF_RA_VERSION_MINOR", "OCF_RESOURCE_INSTANCE", "OCF_RESOURCE_TYPE"]
 	"""Mandatory environment variables to be defined on call
