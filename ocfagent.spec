@@ -91,3 +91,6 @@ LANG=en_US.utf8 py.test-%{python3_version} -vv tests
 %endif # with_python3
 
 %changelog
+* Wed Jul 12 2017 Dr. Torge Szczepanek <t.szczepanek@cygnusnetworks.de> 0.10-1
+- new package built with tito
+
