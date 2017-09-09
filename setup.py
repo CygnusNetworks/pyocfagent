@@ -14,7 +14,7 @@ setuptools.setup(name="pyocfagent",
 	license=__license__,
 	platforms='POSIX',
 	url='https://github.com/CygnusNetworks/pyocfagent',
-	download_url='https://github.com/CygnusNetworks/pyocfagent/tarball/v0.10',
+	download_url='https://github.com/CygnusNetworks/pyocfagent/tarball/v0.11',
 	classifiers=[
 		"License :: OSI Approved :: GNU General Public License v2 (GPLv2)",
 		"Programming Language :: Python",
