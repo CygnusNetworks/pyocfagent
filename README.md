@@ -1,3 +1,7 @@
+[![Build Status](https://travis-ci.org/CygnusNetworks/pyocfagent.svg?branch=master)](https://travis-ci.org/CygnusNetworks/pyocfagent) 
+[![Latest Version](https://img.shields.io/pypi/v/pyocfagent.svg)](https://pypi.python.org/pypi/pyocfagent) [![Downloads](https://img.shields.io/pypi/dm/pyocfagent.svg)](https://pypi.python.org/pypi/pyocfagent) [![Downloads PyPi](https://img.shields.io/pypi/dw/pyocfagent.svg)](https://pypi.python.org/pypi/pyocfagent)
+[![PyPi Status](https://img.shields.io/pypi/status/pyocfagent.svg)](https://pypi.python.org/pypi/pyocfagent) [![PyPi Versions](https://img.shields.io/pypi/pyversions/pyocfagent.svg)](https://pypi.python.org/pypi/pyocfagent)
+
 pyocfagent
 ==========
 
