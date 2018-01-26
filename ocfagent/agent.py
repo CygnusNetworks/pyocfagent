@@ -101,7 +101,7 @@ class ResourceAgent(object):  # pylint: disable=R0902
 		# check if the action is a valid implemented handler
 		action = sys.argv[1]
 		if action not in self.handlers.keys() + ["meta-data", "usage"]:
-			raise RuntimeError("Specified action %s is not a defined handler" % action)
+			raise RuntimeError("Specified action %s does not have a defined handler" % action)
 		return action
 
 	def cmdline_call(self):
@@ -140,7 +140,7 @@ class ResourceAgent(object):  # pylint: disable=R0902
 						continue
 					handler_dict[var] = func.func_defaults[i]
 					i += 1
-				# Excpect timeout to be always implemented. This is a should in
+				# Expect timeout to be always implemented. This is a should in
 				# http://www.linux-ha.org/doc/dev-guides/_metadata.html
 				# but we will force this here to be present
 				if "timeout" not in handler_dict.keys():
@@ -204,7 +204,7 @@ class ResourceAgent(object):  # pylint: disable=R0902
 				if entry not in self.OCF_ENVIRON.keys():
 					raise error.OCFErrArgs("Mandatory environment variable %s not found" % entry)
 
-			# Excpect a OCF RA Version 1.0 here
+			# Expect a OCF RA Version 1.0 here
 			ocf_ra_version = "%i.%i" % (int(self.OCF_ENVIRON["OCF_RA_VERSION_MAJOR"]), int(self.OCF_ENVIRON["OCF_RA_VERSION_MINOR"]))
 			assert ocf_ra_version == "1.0"
 
