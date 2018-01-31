@@ -95,14 +95,24 @@ class ResourceAgent(object):  # pylint: disable=R0902
 			self.parse_parameters()
 
 	def get_action(self):
+		"""validate the requested action. Raise a RuntimeError if the action
+		is unexpected, but return OCF_ERR_UNIMPLEMENTED if the action has merely
+		not been implemented."""
 		# if no cmdline parameter is given, call action is usage
 		if len(sys.argv) <= 1:
 			return "usage"
 		# check if the action is a valid implemented handler
 		action = sys.argv[1]
-		if action not in self.handlers.keys() + ["meta-data", "usage"]:
-			raise RuntimeError("Specified action %s does not have a defined handler" % action)
-		return action
+		# check if the action is a valid implemented handler
+		if action in ["meta-data", "usage"]:
+			return action
+		elif action in self.__OCF_VALID_HANDLERS:
+			if action in self.handlers.keys():
+				return action
+			else:
+				raise error.OCFErrUnimplemented("Specified action %s does not have a defined handler" % action)
+		else:
+			raise RuntimeError("Specified action %s is invalid" % action)
 
 	def cmdline_call(self):
 		"""main function, which should be called. Expects cmd line argument and a implemented action"""
