@@ -54,7 +54,7 @@ class ResourceAgent(object):  # pylint: disable=R0902
 
 	__OCF_HANDLERS_MANDATORY = ["start", "stop", "monitor"]
 	"""Mandatory handlers to be implemented"""
-	__OCF_HANDLERS_OPTIONAL = ["promote", "demote", "migrate_to", "migrate_from", "notify", "recover", "reload"]
+	__OCF_HANDLERS_OPTIONAL = ["promote", "demote", "migrate_to", "migrate_from", "notify", "recover", "reload", "validate_all"]
 	"""Optional handler to be implemented"""
 	__OCF_VALID_HANDLERS = __OCF_HANDLERS_MANDATORY + __OCF_HANDLERS_OPTIONAL
 	"""all handlers to be implemented"""
@@ -101,8 +101,9 @@ class ResourceAgent(object):  # pylint: disable=R0902
 		# if no cmdline parameter is given, call action is usage
 		if len(sys.argv) <= 1:
 			return "usage"
-		# check if the action is a valid implemented handler
-		action = sys.argv[1]
+		# Special case, we can't have a function called
+		# handle_validate-all due to the hyphen
+		action = sys.argv[1].replace("validate-all", "validate_all")
 		# check if the action is a valid implemented handler
 		if action in ["meta-data", "usage"]:
 			return action
@@ -122,7 +123,7 @@ class ResourceAgent(object):  # pylint: disable=R0902
 			self.usage()
 			raise error.OCFErrUnimplemented("No action specified")
 		# Output xml meta-data
-		if action == "meta-data":
+		elif action == "meta-data":
 			self.meta_data()
 		else:
 			# Otherwise call implemented handler
@@ -132,7 +133,8 @@ class ResourceAgent(object):  # pylint: disable=R0902
 	def usage(self):
 		"""Output usage to stdout listing all implemented handlers"""
 		calls = self.handlers.keys() + ["usage", "meta-data"]
-		print ("usage: %s {%s}" % (self.name, "|".join(calls)))
+		# Report handler validate_all as validate-all when communicating with the user
+		print ("usage: %s {%s}" % (self.name, "|".join(calls).replace("validate_all", "validate-all")))
 
 	def get_implemented_handlers(self):
 		"""get all implemented handlers by searching handle_* functions in class"""
@@ -277,8 +279,8 @@ class ResourceAgent(object):  # pylint: disable=R0902
 
 		e_actions = etree.SubElement(e_resourceagent, "actions")
 		for handler in self.handlers.keys():
-
-			h = {"name": handler}
+			# Special case, validate_all should only be used internally
+			h = {"name": handler.replace("validate_all", "validate-all")}
 			for key in self.handlers[handler]:
 				h[key] = str(self.handlers[handler][key])
 
