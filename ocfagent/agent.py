@@ -54,7 +54,7 @@ class ResourceAgent(object):  # pylint: disable=R0902
 
 	__OCF_HANDLERS_MANDATORY = ["start", "stop", "monitor"]
 	"""Mandatory handlers to be implemented"""
-	__OCF_HANDLERS_OPTIONAL = ["promote", "demote", "migrate_to", "migrate_from", "notify", "recover", "reload"]
+	__OCF_HANDLERS_OPTIONAL = ["promote", "demote", "migrate_to", "migrate_from", "notify", "recover", "reload", "validate_all"]
 	"""Optional handler to be implemented"""
 	__OCF_VALID_HANDLERS = __OCF_HANDLERS_MANDATORY + __OCF_HANDLERS_OPTIONAL
 	"""all handlers to be implemented"""
@@ -95,14 +95,25 @@ class ResourceAgent(object):  # pylint: disable=R0902
 			self.parse_parameters()
 
 	def get_action(self):
+		"""validate the requested action. Raise a RuntimeError if the action
+		is unexpected, but return OCF_ERR_UNIMPLEMENTED if the action has merely
+		not been implemented."""
 		# if no cmdline parameter is given, call action is usage
 		if len(sys.argv) <= 1:
 			return "usage"
+		# Special case, we can't have a function called
+		# handle_validate-all due to the hyphen
+		action = sys.argv[1].replace("validate-all", "validate_all")
 		# check if the action is a valid implemented handler
-		action = sys.argv[1]
-		if action not in self.handlers.keys() + ["meta-data", "usage"]:
-			raise RuntimeError("Specified action %s is not a defined handler" % action)
-		return action
+		if action in ["meta-data", "usage"]:
+			return action
+		elif action in self.__OCF_VALID_HANDLERS:
+			if action in self.handlers.keys():
+				return action
+			else:
+				raise error.OCFErrUnimplemented("Specified action %s does not have a defined handler" % action)
+		else:
+			raise RuntimeError("Specified action %s is invalid" % action)
 
 	def cmdline_call(self):
 		"""main function, which should be called. Expects cmd line argument and a implemented action"""
@@ -112,7 +123,7 @@ class ResourceAgent(object):  # pylint: disable=R0902
 			self.usage()
 			raise error.OCFErrUnimplemented("No action specified")
 		# Output xml meta-data
-		if action == "meta-data":
+		elif action == "meta-data":
 			self.meta_data()
 		else:
 			# Otherwise call implemented handler
@@ -122,7 +133,8 @@ class ResourceAgent(object):  # pylint: disable=R0902
 	def usage(self):
 		"""Output usage to stdout listing all implemented handlers"""
 		calls = self.handlers.keys() + ["usage", "meta-data"]
-		print ("usage: %s {%s}" % (self.name, "|".join(calls)))
+		# Report handler validate_all as validate-all when communicating with the user
+		print ("usage: %s {%s}" % (self.name, "|".join(calls).replace("validate_all", "validate-all")))
 
 	def get_implemented_handlers(self):
 		"""get all implemented handlers by searching handle_* functions in class"""
@@ -140,7 +152,7 @@ class ResourceAgent(object):  # pylint: disable=R0902
 						continue
 					handler_dict[var] = func.func_defaults[i]
 					i += 1
-				# Excpect timeout to be always implemented. This is a should in
+				# Expect timeout to be always implemented. This is a should in
 				# http://www.linux-ha.org/doc/dev-guides/_metadata.html
 				# but we will force this here to be present
 				if "timeout" not in handler_dict.keys():
@@ -204,7 +216,7 @@ class ResourceAgent(object):  # pylint: disable=R0902
 				if entry not in self.OCF_ENVIRON.keys():
 					raise error.OCFErrArgs("Mandatory environment variable %s not found" % entry)
 
-			# Excpect a OCF RA Version 1.0 here
+			# Expect a OCF RA Version 1.0 here
 			ocf_ra_version = "%i.%i" % (int(self.OCF_ENVIRON["OCF_RA_VERSION_MAJOR"]), int(self.OCF_ENVIRON["OCF_RA_VERSION_MINOR"]))
 			assert ocf_ra_version == "1.0"
 
@@ -267,8 +279,8 @@ class ResourceAgent(object):  # pylint: disable=R0902
 
 		e_actions = etree.SubElement(e_resourceagent, "actions")
 		for handler in self.handlers.keys():
-
-			h = {"name": handler}
+			# Special case, validate_all should only be used internally
+			h = {"name": handler.replace("validate_all", "validate-all")}
 			for key in self.handlers[handler]:
 				h[key] = str(self.handlers[handler][key])
 
