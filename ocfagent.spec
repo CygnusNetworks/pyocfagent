@@ -8,7 +8,7 @@
 %endif
 
 %define srcname ocfagent
-%define version 0.11
+%define version 0.12
 %define release 1
 %define sum Python OCF Resource Agent Framework for Corosync/Pacemaker
 

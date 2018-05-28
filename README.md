@@ -40,7 +40,7 @@ import ocfagent.parameter
 class TestOCF(ocfagent.agent.ResourceAgent):
         """Test OCF agent
         """
-        VERSION = "0.11"
+        VERSION = "0.10"
         """Version of your agent"""
         SHORTDESC = "Demo OCF agent"
         """Short description of your agent for xml meta-data"""

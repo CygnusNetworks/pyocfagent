@@ -1,3 +1,9 @@
+pyocfagent (0.12) UNRELEASED; urgency=low
+
+  * Fix validate_all handling
+
+ -- Dr. Torge Szczepanek <info@cygnusnetworks.de>  Mon, 28 May 2018 16:20:30 +0200
+
 pyocfagent (0.11) UNRELEASED; urgency=low
 
   * Initial release
